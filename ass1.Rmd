@@ -26,3 +26,4 @@ box = ggplot(Data, aes(x= x.n)) + geom_boxplot()
 grid.arrange(hist, box, ncol = 2)
 ```
 2. The sample mean, and standard deviation of x.n are `r mean(Data$x.n)` and `r sd(Data$x.n)` respectively, we see that these parameters are approximately the same as the standard normal distribution. In fact, as we increase the sample size to infinity, the mean and standard deviation will also approach 0 and 1. 
+
