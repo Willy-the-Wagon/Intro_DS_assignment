@@ -1,0 +1,63 @@
+---
+title: "Assignment 1"
+author: "The Old Republic"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(Pareto)
+set.seed(100)
+Data = data.frame(x.n = rnorm(50000), x.p = rPareto(50000, t=1, alpha=2))
+summary(Data)
+```
+## Question 1
+1. Histogramand Box Plot of the Variable x.n
+```{r}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+x.n.hist = ggplot(data=Data, aes(x=x.n)) + 
+  geom_histogram(bins=100, fill="grey", color="black") +
+  ggtitle("Histogram of x.n")
+
+x.n.box = ggplot(data=Data, mapping=aes(x=x.n)) + 
+  geom_boxplot(outlier.color="red") + 
+  ggtitle("Box Plot of x.n")
+
+grid.arrange(x.n.hist,x.n.box)
+```
+
+2. The sample mean, and standard deviation of x.n are `r mean(Data$x.n)` and `r sd(Data$x.n)` respectively rounded to 3 decimal places. It is evident that these parameters are very close to the parameters of a variable $Z$ following a standard normal distribution, namely  $Z \sim N(0, 1)$. This result is not surprising since the observations were taken from a normal distribution with $\mu=0$ and $\sigma^2=1$.
+
+3. Judging by the shape of the distribution of the observations of x.n and the values for the mean and standard deviation of these observations, we may conclude that $x.n \sim N(0,1)$ approximately. This means that it is highly likely that the new observations from the variable x.n will have values close to 0 $(\mu)$. More specifically, we know that approximately 68% of the observations will be between -1 and 1 $(\mu \pm \sigma)$, 95% of the observations will be between -2 and 2 $(\mu \pm 2\sigma)$ and 99.7% of the observations will be between -3 and 3 $(\mu \pm 3\sigma)$.
+
+4. Mean and standard deviation of the variable x.p
+```{r}
+x.p.mean = mean(Data$x.p)
+x.p.sd = sd(Data$x.p)
+x.p.IQR = quantile(Data$x.p, 0.75)-quantile(Data$x.p, 0.25)
+```
+
+Histogram and Box Plot of the variable x.p
+```{r}
+x.p.hist = ggplot(data=Data, mapping=aes(x=x.p)) + 
+  geom_histogram(bins=50, fill="grey", color="black",) + 
+  ggtitle("x.p Histogram") + 
+  geom_vline(aes(xintercept=x.p.mean), color="blue", linetype="dashed") +
+  geom_vline(aes(xintercept= (quantile(x.p, 0.75) + 1.5*x.p.IQR)), color="red", linetype="dashed")+
+  geom_vline(aes(xintercept= (quantile(x.p, 0.25) - 1.5*x.p.IQR)), color="red", linetype="dashed")
+
+x.p.box = ggplot(data=Data, mapping=aes(x=x.p)) + 
+  geom_boxplot() + 
+  ggtitle("x.p box plot")
+
+grid.arrange(x.p.hist, x.p.box)
+
+```
