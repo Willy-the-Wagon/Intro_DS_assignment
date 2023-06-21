@@ -1,0 +1,267 @@
+---
+title: "Assignment 1"
+author: "The Old Republic"
+date: "`r Sys.Date()`"
+output:
+  pdf_document
+---
+
+```{r setup, include=FALSE}
+library('rmarkdown')
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(Pareto)
+set.seed(100)
+Data = data.frame(x.n = rnorm(50000), x.p = rPareto(50000, t=1, alpha=2))
+summary(Data)
+```
+## Question 1
+1. Histogramand Box Plot of the Variable x.n
+```{r}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(dplyr)
+
+x.n.hist = ggplot(data=Data, aes(x=x.n)) + 
+  geom_histogram(aes(y=after_stat(density)) ,bins=100, fill="grey", color="black") +
+  ggtitle("Histogram of x.n") +
+  geom_density(lwd=0.5, color="blue", fill=4, alpha=0.25) + 
+  geom_vline(xintercept=mean(Data$x.n), color="blue", linetype="dashed", lwd=0.75)
+
+x.n.box = ggplot(data=Data, mapping=aes(x=x.n)) + 
+  geom_boxplot(outlier.color="red") + 
+  ggtitle("Box Plot of x.n")
+
+grid.arrange(x.n.hist,x.n.box)
+```
+
+2. The sample mean, and standard deviation of x.n are `r mean(Data$x.n)` and `r sd(Data$x.n)` respectively rounded to 3 decimal places. It is evident that these parameters are very close to the parameters of a variable $Z$ following a standard normal distribution, namely  $Z \sim N(0, 1)$. This result is not surprising since the observations were taken from a normal distribution with $\mu=0$ and $\sigma^2=1$.
+
+3. Judging by the shape of the distribution of the observations of x.n and the values for the mean and standard deviation of these observations, we may conclude that $x.n \sim N(0,1)$ approximately. This means that it is highly likely that new observations from the variable x.n will have values close to 0 $(\mu)$. Although extreme values are possible, there is an equal probability that an extreme value of the same magnitude but of opposite sign will occur, meaning that the expected value of extreme observations will also be close to 0, which further strengthens the claim that new observations will likely take values close to 0. Additionally, we can also predict that approximately 68% of the observations will be between -1 and 1 $(\mu \pm \sigma)$, 95% of the observations will be between -2 and 2 $(\mu \pm 2\sigma)$ and 99.7% of the observations will be between -3 and 3 $(\mu \pm 3\sigma)$.
+
+4. Mean and standard deviation of the variable x.p
+```{r}
+x.p.mean = mean(Data$x.p)
+x.p.sd = sd(Data$x.p)
+x.p.IQR = quantile(Data$x.p, 0.75)-quantile(Data$x.p, 0.25)
+```
+
+Histogram and Box Plot of the variable x.p
+```{r}
+x.p.hist = ggplot(data=Data, mapping=aes(x=x.p)) + 
+  geom_histogram(binwidth=1, fill="grey", color="black",) + 
+  ggtitle("x.p Histogram") + 
+  geom_vline(aes(xintercept=x.p.mean), color="blue", linetype="dashed") +
+  geom_vline(aes(xintercept= (quantile(x.p, 0.75) + 1.5*x.p.IQR)), color="red", linetype="dashed")+
+  geom_vline(aes(xintercept= (quantile(x.p, 0.25) - 1.5*x.p.IQR)), color="red", linetype="dashed")
+
+x.p.box = ggplot(data=Data, mapping=aes(x=x.p)) + 
+  geom_boxplot() + 
+  ggtitle("x.p box plot")
+
+grid.arrange(x.p.hist, x.p.box)
+
+```
+
+Create table x.p.count which contains the number of data points in classes of width 0.5 and data frame x.p.df which contains the mean value of the data points that do not belong in a class that has a count less than a specific value.
+```{r}
+x.p.counts = table(cut(Data$x.p, seq(0, 160, 0.5)))
+x.p.counts.lastclass = sum(x.p.counts[45:dim(x.p.counts)])
+x.p.counts = x.p.counts[(1:44)]
+x.p.counts[">22"] = x.p.counts.lastclass
+
+x.p.df = data.frame(matrix(ncol=2))
+colnames(x.p.df) = c("Count", "Mean")
+
+# View x.p.counts
+x.p.counts
+
+# Choose first class to be for count less than 28000. This occurs for all classes and is thus equivalent to the sample mean. Calculate the sample mean and add it to the data frame.
+x.p.df[1,1] = 28000
+x.p.df[1,2] = mean(Data$x.p)
+
+# Choose next class to be for count less than 10000. This occurs for all classes other than the (1,1.5] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[2,1] = 10000
+x.p.df[2,2] = mean(filter(Data, x.p<=1 | x.p>1.5)[,2])
+
+# Choose next class to be for count less than 5000. This occurs for all classes other than the (1,2] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[3,1] = 5000
+x.p.df[3,2] = mean(filter(Data, x.p<=1 | x.p>2)[,2])
+
+# Choose next class to be for count less than 2500. This occurs for all classes other than the (1,2.5] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[4,1] = 2500
+x.p.df[4,2] = mean(filter(Data, x.p<=1 | x.p>2.5)[,2])
+
+# Choose next class to be for count less than 2000. This occurs for all classes other than the (1,3] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[5,1] = 2000
+x.p.df[5,2] = mean(filter(Data, x.p<=1 | x.p>3)[,2])
+
+# Choose next class to be for count less than 1000. This occurs for all classes other than the (1,3.5] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[6,1] = 1000
+x.p.df[6,2] = mean(filter(Data, x.p<=1 | x.p>3.5)[,2])
+
+# Choose next class to be for count less than 750. This occurs for all classes other than the (1,4] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[7,1] = 750
+x.p.df[7,2] = mean(filter(Data, x.p<=1 | x.p>4)[,2])
+
+# Choose next class to be for count less than 500. This occurs for all classes other than the (1,4.5] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[8,1] = 500
+x.p.df[8,2] = mean(filter(Data, x.p<=1 | x.p>4.5)[,2])
+
+# Choose next class to be for count less than 250. This occurs for all classes other than the (1,6] class. Calculate the mean of data points that are not in that interval and add it to the data frame.
+x.p.df[9,1] = 250
+x.p.df[9,2] = mean(filter(Data, x.p<=1 | x.p>6)[,2])
+
+# Choose next class to be for count less than 100. This occurs for all classes other than the (1,7.5] class. Calculate the mean of data points that are not in that interval and add it to the data frame. It should be noted that data in the class ">22" is included in the mean calculation since no single class of width 0.5 after 22 contains more than 100 values.
+x.p.df[10,1] = 100
+x.p.df[10,2] = mean(filter(Data, x.p<=1 | x.p>7.5)[,2])
+
+x.p.df.plot = ggplot(data=x.p.df, mapping=aes(x=Count, y=Mean)) +
+  geom_point() + 
+  geom_smooth(method="auto", se=FALSE) + 
+  geom_hline(yintercept=mean(Data$x.p), color="red", linetype="dashed", lwd=0.75)
+x.p.df.plot
+
+
+```
+
+It is evident from the graph above that for the variable x.p there seems to be an inverse relationship between the mean of the observations in classes that have a count less than a specific number and the count corresponding to that specific number. This means that observations in classes that contain fewer values (i.e. classes that likely contain extreme values) will have a higher mean value. As extreme values are likely to be part of any new sample, this implies that using the sample mean (red dashed line) to make predictions about future observations is not optimal since more extreme values will obtain higher average values, and it would thus be erroneous to claim that they would lie close to the sample mean as it does not represent their extreme nature.
+
+## Question 2
+1. Load the data stored in the cars.csv as a data frame
+```{r}
+Data = read.csv("Car_data.csv", na.strings=c("?", "NA"))
+head(Data)
+```
+
+Remove all missing values from the variable price
+```{r}
+Data.drop = Data[-which(is.na(Data$price)),]
+```
+
+2. Histogram of the variable price
+```{r}
+price.hist = ggplot(data=Data.drop, mapping=aes(x=price)) + 
+  geom_histogram(binwidth=1000, fill="grey", color="black",) + 
+  ggtitle("price Histogram") + 
+  geom_vline(aes(xintercept=mean(Data.drop$price)), color="blue", linetype="dashed")
+
+price.hist
+```
+
+3. We first create a new data frame called Data.cols that only contains the columns curb.weight, engine.size, horsepower, highway.mpg and price.
+```{r}
+Data.cols = Data.drop[, c("curb.weight", "engine.size", "horsepower", "highway.mpg", "price")]
+
+# Check if there are any missing values in Data.cols 
+sum(is.na(Data.cols))
+
+# Check which columns contain these missing values
+names(which(colSums(is.na(Data.cols)) > 0))
+
+# Remove rows containing missing values from the data frame
+Data.cols = Data.cols[-which(is.na(Data.cols$horsepower)), ]
+
+# Check that there are no more missing values
+sum(is.na(Data.cols))
+```
+
+Plot graphs for the relationships between curb.weight, engine.size, horsepower, highway.mpg and price independently
+```{r, out.width="100%"}
+# Curb Weight against Price scatter
+weight.price = ggplot(data=Data.cols, mapping=aes(x=curb.weight, y=price)) +
+  geom_point() +
+  labs(x="Curb Weight", y="Price") + 
+  ggtitle("Curb Weight - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+# Engine Size against Price scatter
+esize.price = ggplot(data=Data.cols, mapping=aes(x=engine.size, y=price)) +
+  geom_point() +
+  labs(x="Engine Size", y="Price") + 
+  ggtitle("Engine Size - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+# Horsepower against Price scatter
+horsepower.price = ggplot(data=Data.cols, mapping=aes(x=horsepower, y=price)) +
+  geom_point() +
+  labs(x="Horsepower", y="Price") + 
+  ggtitle("Horsepower - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+# Highway MPG against Price scatter
+mpg.price = ggplot(data=Data.cols, mapping=aes(x=highway.mpg, y=price)) +
+  geom_point() +
+  labs(x="Highway mpg", y="Price") + 
+  ggtitle("Highway mpg - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+
+grid.arrange(weight.price, esize.price, horsepower.price, mpg.price)
+
+# Calculate the correlation coefficient between each pair of variables
+weight.price.cor = cor(Data.cols$curb.weight, Data.cols$price)
+esize.price.cor = cor(Data.cols$engine.size, Data.cols$price)
+horsepower.price.cor = cor(Data.cols$horsepower, Data.cols$price)
+mpg.price.cor = cor(Data.cols$highway.mpg, Data.cols$price)
+
+c(weight.price.cor, esize.price.cor, horsepower.price.cor, mpg.price.cor)
+```
+
+As can be seen from both the graphs above and the correlation coefficients, strong relationships exist between each pair of variables. More specifically, there seems to be a very strong positive relationship between the weight of the car and its price, the engine size of the car and its price, and the horsepower of the car and its price. This means that cars that weigh more will tend to cost more, cars that have a large engine will tend to cost more, and cars that have high horsepower also tend to cost more. Conversely, there seems to be a negative relationship between highway mpg and price. This means that cars that have a high mpg will cost less but those with low mpg will cost more.
+
+4. Firstly create a new data frame called Data.zscores that will contain the standardised scores of the data stored in the curb.weight, engine.size, horsepower, and highway.mpg columns of the Data.cols data frame
+```{r}
+# Create the data frame
+Data.zscores = Data.cols[,-5]
+
+# Standardise data stored in each column
+Data.zscores$curb.weight = (Data.zscores$curb.weight - mean(Data.zscores$curb.weight)) / sd(Data.zscores$curb.weight)
+Data.zscores$engine.size = (Data.zscores$engine.size - mean(Data.zscores$engine.size)) / sd(Data.zscores$engine.size)
+Data.zscores$horsepower = (Data.zscores$horsepower - mean(Data.zscores$horsepower)) / sd(Data.zscores$horsepower)
+Data.zscores$highway.mpg = (Data.zscores$highway.mpg - mean(Data.zscores$highway.mpg)) / sd(Data.zscores$highway.mpg)
+
+# Perform PCA
+Data.PCA = prcomp(Data.zscores, center=FALSE)
+Data.PCA$rotation
+```
+
+5. To investigate the relationship between each of the principal components and price, we can create scatter plots for each of the principal components and price. To do this, we firstly create a new data frame called Data.PCA.price, which includes all the data contained in the Data.PCA data frame as well as the data contained in the price column of the Data.cols data frame.
+```{r, out.width="100%"}
+# Create new data frame and change column names
+Data.PCA.price = data.frame(Data.PCA$x, Data.cols$price)
+colnames(Data.PCA.price) <- c("PC1", "PC2", "PC3", "PC4", "price")
+
+# Create scatter plot of PC1 against price
+PC1.price = ggplot(data=Data.PCA.price, mapping=aes(x=PC1, y=price)) +
+  geom_point() +
+  labs(x="PC1", y="Price") + 
+  ggtitle("PC1 - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+# Create scatter plot of PC2 against price
+PC2.price = ggplot(data=Data.PCA.price, mapping=aes(x=PC2, y=price)) +
+  geom_point() +
+  labs(x="PC2", y="Price") + 
+  ggtitle("PC2 - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+# Create scatter plot of PC3 against price
+PC3.price = ggplot(data=Data.PCA.price, mapping=aes(x=PC3, y=price)) +
+  geom_point() +
+  labs(x="PC3", y="Price") + 
+  ggtitle("PC3 - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+# Create scatter plot of PC4 against price
+PC4.price = ggplot(data=Data.PCA.price, mapping=aes(x=PC4, y=price)) +
+  geom_point() +
+  labs(x="PC4", y="Price") + 
+  ggtitle("PC4 - Price scatter") +
+  geom_smooth(method='lm', se=FALSE, linewidth=0.75)
+
+grid.arrange(PC1.price, PC2.price, PC3.price, PC4.price)
+
+```
