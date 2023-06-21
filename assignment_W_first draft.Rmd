@@ -1,0 +1,144 @@
+---
+title: "Assignment 1"
+author: "The Old Republic"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(Pareto)
+set.seed(100)
+Data = data.frame(x.n = rnorm(50000), x.p = rPareto(50000, t=1, alpha=2))
+summary(Data)
+```
+## Question 1
+1. Histogram and Boxplot of the Variable x.n
+```{r}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+hist = ggplot(Data, aes(x= x.n)) + geom_histogram(bins = 20)
+box = ggplot(Data, aes(x= x.n)) + geom_boxplot()
+grid.arrange(hist, box, ncol = 2)
+```
+2. The sample mean, and standard deviation of x.n are `r mean(Data$x.n)` and `r sd(Data$x.n)` respectively, we see that these parameters are approximately the same as the standard normal distribution. In fact, as we increase the sample size to infinity, the mean and standard deviation will also approach 0 and 1. 
+
+3. The sample mean and sample standard deviation are close to the distribution parameters. The sample mean can be used as a predictor for new observations. 
+Including the fact that there are not many outliers, the sample mean is a reasonable indicator to predict new observations. Further, the sample standard deviation of course describes the spread of the data.
+
+4. let's plot the median along with the mean and say there's a difference. And we can also mention the high proportion of outliers. We can add a pie chart maybe cause they seem to like visuals
+```{r}
+phist = ggplot(Data, aes(x= x.p)) + geom_histogram(bins = 20)+
+  geom_vline(aes(xintercept=mean(x.p)),
+            color="blue", linetype="dashed", size=1)
+
+pbox = ggplot(Data, aes(x= x.p)) + geom_boxplot()
+
+grid.arrange(phist, pbox, ncol = 2)
+
+mean(Data$x.p)
+sd(Data$x.p)
+quantile(Data$x.p, prob=c(.25,.5,.75), type=1)
+
+q1  <- quantile(Data$x.p, prob=.25)
+q3  <- quantile(Data$x.p, prob=.75)
+IQR <- q3 - q1
+
+l <- q1 - IQR
+u <- q3 + IQR
+
+upper_outliers <- filter(Data, Data$x.p > u)
+lower_outliers <- filter(Data, Data$x.p < l)
+length(Data$x.p)
+length(upper_outliers$x.p)
+length(lower_outliers$x.p)
+```
+
+## Question 2
+1. 
+```{r}
+library("ggplot2")
+library("tidyr")
+Data = read.csv("Car_data.csv", na.strings=c("?"))
+
+Data = Data %>% 
+  drop_na(c("price"))
+```
+
+2.
+```{r}
+hist = ggplot(Data, aes(x= price)) + geom_histogram(bins = 20)
+```
+
+3. 
+```{r}
+plot(Data$price, Data$curb.weight)
+plot(Data$price, Data$engine.size)
+plot(Data$price, Data$horsepower)
+plot(Data$price, Data$highway.mpg)
+```
+We can see from these graphs that price is directly related to curb weight, engine size, and horsepower. However, it has an inverse relationship with highway mileage.
+
+4.
+```{r}
+#read data
+Data = read.csv("Car_data.csv", na.strings=c("?"))
+
+#take out rows of NA
+Data = Data %>% 
+  drop_na(c("horsepower"))
+
+#normalize the data
+x1 = (Data$curb.weight - mean(Data$curb.weight)) / sd(Data$curb.weight)
+x2 = (Data$engine.size - mean(Data$engine.size)) / sd(Data$engine.size)
+x3 = (Data$horsepower - mean(Data$horsepower)) / sd(Data$horsepower)
+x4 = (Data$highway.mpg - mean(Data$highway.mpg)) / sd(Data$highway.mpg)
+
+#create the dataframe
+X = data.frame(c_weight = x1, engine = x2, horsepower = x3, mileage = x4)
+
+#perform the analysis
+prcomp(X)
+```
+Principle component 1 is influenced equally by all variables except mileage. More specifically, it carries a similar magnitude but with the opposite sign. It can be noted that cars that are heavier and cars with powerful engines (large engine size and high horsepower) often do not have as high of a mileage. Thus the first principle component corresponds with the efficiency of the car--with heavier, stronger cars on one end; and lighter, more fuel efficient cars on the other
+
+The second principle component is mostly influenced by mileage and engine size. 
+Diesel engines, compared to petrol, are often larger and are also more fuel efficient, which would result in a higher mileage. Thus, the second principle component could correspond with the engine type of the car, such as possibly separating diesel and petrol engines.
+
+The third principle component is weakly influenced by engine size, mostly being affected by curb weight and horsepower. These variables have different signs however, so this principle component largely describes the difference between these two. 
+Thus, the third principle component may describe the difference between large, heavier family cars and more compact, lighter sports cars which have high horsepower
+
+5.
+```{r}
+Data = read.csv("Car_data.csv", na.strings=c("?"))
+Data = Data %>% 
+  drop_na(c("horsepower"))
+Data = Data %>%
+  drop_na(c("price"))
+
+
+#normalize the data
+x1 = (Data$curb.weight - mean(Data$curb.weight)) / sd(Data$curb.weight)
+x2 = (Data$engine.size - mean(Data$engine.size)) / sd(Data$engine.size)
+x3 = (Data$horsepower - mean(Data$horsepower)) / sd(Data$horsepower)
+x4 = (Data$highway.mpg - mean(Data$highway.mpg)) / sd(Data$highway.mpg)
+
+#create the dataframe
+X = data.frame(c_weight = x1, engine = x2, horsepower = x3, mileage = x4)
+X
+a = prcomp(X)
+
+plot(Data$price, a$x[, "PC1"])
+plot(Data$price, a$x[, "PC2"])
+plot(Data$price, a$x[, "PC3"])
+plot(Data$price, a$x[, "PC4"])
+```
+as seen in the first graph, the variable price has a strong direct relationship with the first principle component. This is consistent with our findings in part (2.3) as we found price to have a directly positive relationship with curb weight, engine size, and horsepower; but an inverse relationship with highway mileage.
+This makes sense as we found our first principle component to have an equally significant influence from all variables, and only highway mileage with a negative value.
+Thus this graph further describes the variable price's relationship with these other variables.
+
+The following graphs also are consistent with this information
+
