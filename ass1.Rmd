@@ -7,16 +7,18 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library('rmarkdown')
 ```
 ```{r}
 library(Pareto)
 set.seed(100)
 Data = data.frame(x.n = rnorm(50000), x.p = rPareto(50000, t=1, alpha=2))
 summary(Data)
+
 ```
 ## Question 1
 1. Histogram and Boxplot of the Variable x.n
-```{r}
+```{r, fig.dim = c(6, 4)}
 library(ggplot2)
 library(grid)
 library(gridExtra)
@@ -25,5 +27,55 @@ hist = ggplot(Data, aes(x= x.n)) + geom_histogram(bins = 20)
 box = ggplot(Data, aes(x= x.n)) + geom_boxplot()
 grid.arrange(hist, box, ncol = 2)
 ```
-2. The sample mean, and standard deviation of x.n are `r mean(Data$x.n)` and `r sd(Data$x.n)` respectively, we see that these parameters are approximately the same as the standard normal distribution. In fact, as we increase the sample size to infinity, the mean and standard deviation will also approach 0 and 1. 
+2. The sample mean, and standard deviation of x.n are `r mean(Data$x.n)` and `r sd(Data$x.n)` respectively, we see that these parameters are approximately the same as the standard normal distribution. In fact, as we increase the sample size to infinity, the mean and standard deviation will also approach 0 and 1.
 
+## Question 2
+```{r, fig.dim = c(6, 4)}
+Data = read.csv("Car_data.csv", na.strings=c("?"))
+head(Data)
+
+```
+1. 
+```{r, fig.dim = c(6, 4)}
+library(tidyr)
+Data = drop_na(Data, price, curb.weight, engine.size, horsepower, highway.mpg)
+head(Data)
+```
+2. Histogram of price
+```{r}
+ggplot(Data, aes(x= price)) + geom_histogram(bins = 20)
+```
+
+3. EDA graphs
+```{r, fig.dim = c(6, 4)}
+Data$curb.weight = (Data$curb.weight - mean(Data$curb.weight))/sd(Data$curb.weight)
+Data$engine.size = (Data$engine.size - mean(Data$engine.size))/sd(Data$engine.size)
+Data$horsepower= (Data$horsepower - mean(Data$horsepower))/sd(Data$horsepower)
+Data$highway.mpg= (Data$highway.mpg - mean(Data$highway.mpg))/sd(Data$highway.mpg)
+weight = ggplot(Data, aes(x = curb.weight, y = price)) + geom_point()
+size = ggplot(Data, aes(x = engine.size, y = price)) + geom_point()
+hp = ggplot(Data, aes(x = horsepower, y = price)) + geom_point()
+mpg = ggplot(Data, aes(x = highway.mpg, y = price)) + geom_point()
+grid.arrange(weight,size,hp, mpg, ncol = 2)
+```
+We can see from the above plots that, curb.weight, engine.size and horsepower are directly proportional to price. Also, we see that highway.mpg is inversely proportional to price.
+4. 
+```{r, fig.dim = c(6, 4)}
+Data_stripped = Data[,c("curb.weight", "engine.size", "horsepower", "highway.mpg", "price")]
+Data.PCA = prcomp(Data_stripped[, 1:4], center=FALSE)
+
+Data.PCA
+```
+- We see from the components of PC1, that all the components are equally significant, and that highway.mpg has an inverse relation to the other components. So, there exists relation between the 'power' of a car, and the mileage.
+- We see from PC2, that it depends strongly on mileage and engine.size. 
+- PC3, depends on horsepower and weight, and might depict a negative relation between horsepower and the weight of a car.
+5. 
+```{r, fig.dim = c(6, 4)}
+pc1 = ggplot(Data, aes(x = Data.PCA$x[,'PC1'], y = price)) + geom_point() + labs(x='PC1')
+pc2 = ggplot(Data, aes(x = Data.PCA$x[,'PC2'], y = price)) + geom_point()+ labs(x='PC2')
+pc3 = ggplot(Data, aes(x = Data.PCA$x[,'PC3'], y = price)) + geom_point()+ labs(x='PC3')
+pc4 = ggplot(Data, aes(x = Data.PCA$x[,'PC4'], y = price)) + geom_point()+ labs(x='PC4')
+grid.arrange(pc1, pc2, pc3, pc4, ncol = 2, nrow= 2)
+```
+We see a strong positive relation between PC1 and price, and no relation between PC2, PC3, PC4 and price respectively. 
+This is in constrast with question 2.3, where there exist relations between each of the variables and the price. This is partly because the principal components are composed of the variables observed in 2.3, and so, the relations are altered based on the loading vectors.
